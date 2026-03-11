@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculatrice CBAM - Mécanisme d'Ajustement Carbone aux Frontières</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.4.24/dist/full.min.css" rel="stylesheet" type="text/css" />
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'eu-blue': '#003399',
+                        'eu-yellow': '#FFCC00'
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Header -->
+    <div class="bg-eu-blue text-white py-6">
+        <div class="container mx-auto px-4">
+            <h1 class="text-3xl font-bold text-center">Calculatrice CBAM</h1>
+            <p class="text-center mt-2 text-blue-100">Mécanisme d'Ajustement Carbone aux Frontières - Union Européenne</p>
+        </div>
+    </div>
+
+    <div class="container mx-auto px-4 py-8 max-w-6xl">
+        <!-- Info Alert -->
+        <div class="alert alert-info mb-6">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-current shrink-0 w-6 h-6">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            <div>
+                <h3 class="font-bold">Phase transitoire (2023-2025)</h3>
+                <div class="text-xs">Actuellement, seule la déclaration est obligatoire. Les paiements commenceront en janvier 2026.</div>
+            </div>
+        </div>
+
+        <div class="grid lg:grid-cols-2 gap-8">
+            <!-- Calculatrice -->
+            <div class="card bg-white shadow-xl">
+                <div class="card-body">
+                    <h2 class="card-title text-eu-blue mb-4">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                        </svg>
+                        Calculateur CBAM
+                    </h2>
+
+                    <!-- Secteur Selection -->
+                    <div class="form-control mb-4">
+                        <label class="label">
+                            <span class="label-text font-semibold">Secteur d'activité</span>
+                        </label>
+                        <select id="secteur" class="select select-bordered w-full" onchange="updateDefaultValues()">
+                            <option value="acier">Acier</option>
+                            <option value="aluminium">Aluminium</option>
+                            <option value="ciment">Ciment</option>
+                            <option value="engrais">Engrais</option>
+                            <option value="electricite">Électricité</option>
+                            <option value="hydrogene">Hydrogène</option>
+                        </select>
+                    </div>
+
+                    <!-- Volume d'importation -->
+                    <div class="form-control mb-4">
+                        <label class="label">
+                            <span class="label-text font-semibold">Volume d'importation (tonnes)</span>
+                        </label>
+                        <input type="number" id="volume" class="input input-bordered w-full" placeholder="Ex: 1000" oninput="calculateCBAM()" min="0" step="0.01">
+                    </div>
+
+                    <!-- Émissions incorporées -->
+                    <div class="form-control mb-4">
+                        <label class="label">
+                            <span class="label-text font-semibold">Émissions incorporées (tCO₂/tonne de produit)</span>
+                            <span class="label-text-alt">
+                                <div class="tooltip tooltip-left" data-tip="Émissions directes + indirectes selon le secteur">
+                                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
+                                    </svg>
+                                </div>
+                            </span>
+                        </label>
+                        <input type="number" id="emissions" class="input input-bordered w-full" placeholder="Ex: 2.1" oninput="calculateCBAM()" min="0" step="0.001">
+                        <label class="label">
+                            <span class="label-text-alt text-gray-500">Valeur par défaut suggérée selon le secteur sélectionné</span>
+                        </label>
+                    </div>
+
+                    <!-- Prix du carbone EUA -->
+                    <div class="form-control mb-4">
+                        <label class="label">
+                            <span class="label-text font-semibold">Prix du carbone EUA (€/tCO₂)</span>
+                            <span class="label-text-alt">
+                                <div class="tooltip tooltip-left" data-tip="Prix moyen hebdomadaire des quotas européens">
+                                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
+                                    </svg>
+                                </div>
+                            </span>
+                        </label>
+                        <input type="number" id="prixEUA" class="input input-bordered w-full" value="70" oninput="calculateCBAM()" min="0" step="0.01">
+                        <label class="label">
+                            <span class="label-text-alt text-gray-500">Prix indicatif actuel: ~70€/tCO₂</span>
+                        </label>
+                    </div>
+
+                    <!-- Quotas gratuits -->
+                    <div class="form-control mb-4">
+                        <label class="label">
+                            <span class="label-text font-semibold">Facteur de réduction (quotas gratuits UE)</span>
+                            <span class="label-text-alt">
+                                <div class="tooltip tooltip-left" data-tip="Pourcentage de quotas gratuits accordés aux industriels UE pour ce secteur">
+                                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
+                                    </svg>
+                                </div>
+                            </span>
+                        </label>
+                        <div class="flex items-center space-x-2">
+                            <input type="range" id="quotasGratuits" class="range range-primary flex-1" min="0" max="100" value="75" oninput="updateQuotasDisplay(); calculateCBAM()">
+                            <span id="quotasDisplay" class="badge badge-primary">75%</span>
+                        </div>
+                        <label class="label">
+                            <span class="label-text-alt text-gray-500">Diminue progressivement jusqu'en 2034</span>
+                        </label>
+                    </div>
+
+                    <!-- Prix carbone payé à l'étranger -->
+                    <div class="form-control mb-6">
+                        <label class="label">
+                            <span class="label-text font-semibold">Prix carbone déjà payé à l'étranger (€/tCO₂)</span>
+                            <span class="label-text-alt">
+                                <div class="tooltip tooltip-left" data-tip="Taxe carbone ou système ETS du pays d'origine (déductible)">
+                                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
+                                    </svg>
+                                </div>
+                            </span>
+                        </label>
+                        <input type="number" id="prixEtranger" class="input input-bordered w-full" value="0" oninput="calculateCBAM()" min="0" step="0.01">
+                    </div>
+
+                    <!-- Bouton de calcul -->
+                    <button class="btn btn-primary w-full" onclick="calculateCBAM()">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                        </svg>
+                        Calculer le coût CBAM
+                    </button>
+                </div>
+            </div>
+
+            <!-- Résultats -->
+            <div class="space-y-6">
+                <!-- Résultats principaux -->
+                <div class="card bg-white shadow-xl">
+                    <div class="card-body">
+                        <h2 class="card-title text-green-600 mb-4">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                            </svg>
+                            Résultats du calcul
+                        </h2>
+
+                        <div class="grid grid-cols-1 gap-4">
+                            <!-- Émissions totales -->
+                            <div class="stat bg-blue-50 rounded-lg">
+                                <div class="stat-title text-blue-600">Émissions totales</div>
+                                <div class="stat-value text-blue-700" id="emissionsTotales">0 tCO₂</div>
+                                <div class="stat-desc">Volume × Facteur d'émission</div>
+                            </div>
+
+                            <!-- Émissions taxables -->
+                            <div class="stat bg-orange-50 rounded-lg">
+                                <div class="stat-title text-orange-600">Émissions taxables</div>
+                                <div class="stat-value text-orange-700" id="emissionsTaxables">0 tCO₂</div>
+                                <div class="stat-desc">Après déduction quotas gratuits</div>
+                            </div>
+
+                            <!-- Coût brut -->
+                            <div class="stat bg-red-50 rounded-lg">
+                                <div class="stat-title text-red-600">Coût brut CBAM</div>
+                                <div class="stat-value text-red-700" id="coutBrut">0 €</div>
+                                <div class="stat-desc">Avant déduction prix étranger</div>
+                            </div>
+
+                            <!-- Coût net final -->
+                            <div class="stat bg-green-50 rounded-lg border-2 border-green-200">
+                                <div class="stat-title text-green-600 font-bold">Coût net CBAM</div>
+                                <div class="stat-value text-green-700 text-2xl" id="coutNet">0 €</div>
+                                <div class="stat-desc font-semibold">Montant final à payer (2026+)</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Détail des calculs -->
+                <div class="card bg-white shadow-xl">
+                    <div class="card-body">
+                        <h3 class="card-title text-gray-700 mb-4">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                            Détail des calculs
+                        </h3>
+                        <div class="space-y-3 text-sm">
+                            <div class="flex justify-between">
+                                <span>1. Émissions totales:</span>
+                                <span id="calcul1" class="font-mono">-</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>2. Facteur de réduction:</span>
+                                <span id="calcul2" class="font-mono">-</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>3. Émissions taxables:</span>
+                                <span id="calcul3" class="font-mono">-</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>4. Coût brut (× prix EUA):</span>
+                                <span id="calcul4" class="font-mono">-</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>5. Déduction prix étranger:</span>
+                                <span id="calcul5" class="font-mono">-</span>
+                            </div>
+                            <div class="divider"></div>
+                            <div class="flex justify-between font-bold text-lg">
+                                <span>Coût net final:</span>
+                                <span id="calcul6" class="font-mono text-green-600">-</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Informations complémentaires -->
+        <div class="mt-8 grid md:grid-cols-2 gap-6">
+            <!-- Formule -->
+            <div class="card bg-white shadow-xl">
+                <div class="card-body">
+                    <h3 class="card-title text-eu-blue mb-4">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                        </svg>
+                        Formule de calcul
+                    </h3>
+                    <div class="bg-gray-50 p-4 rounded-lg font-mono text-sm">
+                        <div class="mb-2"><strong>Coût CBAM =</strong></div>
+                        <div class="ml-4 mb-2">Volume (t) × Émissions (tCO₂/t)</div>
+                        <div class="ml-4 mb-2">× (1 - % quotas gratuits)</div>
+                        <div class="ml-4 mb-2">× (Prix EUA - Prix étranger)</div>
+                    </div>
+                    <div class="alert alert-warning mt-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-current shrink-0 w-6 h-6">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16c-.77.833.192 2.5 1.732 2.5z"></path>
+                        </svg>
+                        <span class="text-xs">Cette calculatrice fournit une estimation. Les calculs officiels peuvent différer selon les spécificités réglementaires.</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Secteurs et valeurs par défaut -->
+            <div class="card bg-white shadow-xl">
+                <div class="card-body">
+                    <h3 class="card-title text-eu-blue mb-4">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                        </svg>
+                        Valeurs par défaut par secteur
+                    </h3>
+                    <div class="overflow-x-auto">
+                        <table class="table table-zebra table-xs">
+                            <thead>
+                                <tr>
+                                    <th>Secteur</th>
+                                    <th>Émissions (tCO₂/t)</th>
+                                    <th>Quotas gratuits</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Acier</td>
+                                    <td>2.1</td>
+                                    <td>75%</td>
+                                </tr>
+                                <tr>
+                                    <td>Aluminium</td>
+                                    <td>11.5</td>
+                                    <td>80%</td>
+                                </tr>
+                                <tr>
+                                    <td>Ciment</td>
+                                    <td>0.85</td>
+                                    <td>70%</td>
+                                </tr>
+                                <tr>
+                                    <td>Engrais</td>
+                                    <td>3.2</td>
+                                    <td>65%</td>
+                                </tr>
+                                <tr>
+                                    <td>Électricité</td>
+                                    <td>0.45</td>
+                                    <td>0%</td>
+                                </tr>
+                                <tr>
+                                    <td>Hydrogène</td>
+                                    <td>9.8</td>
+                                    <td>60%</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="text-xs text-gray-500 mt-2">
+                        * Valeurs indicatives moyennes. Utilisez les données réelles de vos fournisseurs.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="mt-8 text-center text-gray-500 text-sm">
+            <p>Calculatrice CBAM - Outil d'estimation non officiel</p>
+            <p>Pour les calculs officiels, consultez le registre transitoire de l'Union Européenne</p>
+        </div>
+    </div>
+
+    <script>
+        // Valeurs par défaut par secteur
+        const secteurDefaults = {
+            acier: { emissions: 2.1, quotas: 75 },
+            aluminium: { emissions: 11.5, quotas: 80 },
+            ciment: { emissions: 0.85, quotas: 70 },
+            engrais: { emissions: 3.2, quotas: 65 },
+            electricite: { emissions: 0.45, quotas: 0 },
+            hydrogene: { emissions: 9.8, quotas: 60 }
+        };
+
+        function updateDefaultValues() {
+            const secteur = document.getElementById('secteur').value;
+            const defaults = secteurDefaults[secteur];
+            
+            document.getElementById('emissions').value = defaults.emissions;
+            document.getElementById('quotasGratuits').value = defaults.quotas;
+            updateQuotasDisplay();
+            calculateCBAM();
+        }
+
+        function updateQuotasDisplay() {
+            const quotas = document.getElementById('quotasGratuits').value;
+            document.getElementById('quotasDisplay').textContent = quotas + '%';
+        }
+
+        function calculateCBAM() {
+            // Récupération des valeurs
+            const volume = parseFloat(document.getElementById('volume').value) || 0;
+            const emissions = parseFloat(document.getElementById('emissions').value) || 0;
+            const prixEUA = parseFloat(document.getElementById('prixEUA').value) || 0;
+            const quotasGratuits = parseFloat(document.getElementById('quotasGratuits').value) || 0;
+            const prixEtranger = parseFloat(document.getElementById('prixEtranger').value) || 0;
+
+            // Calculs
+            const emissionsTotales = volume * emissions;
+            const facteurReduction = (100 - quotasGratuits) / 100;
+            const emissionsTaxables = emissionsTotales * facteurReduction;
+            const coutBrut = emissionsTaxables * prixEUA;
+            const deductionEtranger = emissionsTaxables * prixEtranger;
+            const coutNet = Math.max(0, coutBrut - deductionEtranger);
+
+            // Affichage des résultats
+            document.getElementById('emissionsTotales').textContent = emissionsTotales.toFixed(2) + ' tCO₂';
+            document.getElementById('emissionsTaxables').textContent = emissionsTaxables.toFixed(2) + ' tCO₂';
+            document.getElementById('coutBrut').textContent = coutBrut.toLocaleString('fr-FR', {minimumFractionDigits: 2}) + ' €';
+            document.getElementById('coutNet').textContent = coutNet.toLocaleString('fr-FR', {minimumFractionDigits: 2}) + ' €';
+
+            // Détail des calculs
+            document.getElementById('calcul1').textContent = volume.toFixed(2) + ' t × ' + emissions.toFixed(3) + ' tCO₂/t = ' + emissionsTotales.toFixed(2) + ' tCO₂';
+            document.getElementById('calcul2').textContent = '(100% - ' + quotasGratuits + '%) = ' + (facteurReduction * 100).toFixed(1) + '%';
+            document.getElementById('calcul3').textContent = emissionsTotales.toFixed(2) + ' × ' + (facteurReduction * 100).toFixed(1) + '% = ' + emissionsTaxables.toFixed(2) + ' tCO₂';
+            document.getElementById('calcul4').textContent = emissionsTaxables.toFixed(2) + ' × ' + prixEUA.toFixed(2) + ' €/tCO₂ = ' + coutBrut.toLocaleString('fr-FR', {minimumFractionDigits: 2}) + ' €';
+            document.getElementById('calcul5').textContent = emissionsTaxables.toFixed(2) + ' × ' + prixEtranger.toFixed(2) + ' €/tCO₂ = ' + deductionEtranger.toLocaleString('fr-FR', {minimumFractionDigits: 2}) + ' €';
+            document.getElementById('calcul6').textContent = coutNet.toLocaleString('fr-FR', {minimumFractionDigits: 2}) + ' €';
+        }
+
+        // Initialisation
+        document.addEventListener('DOMContentLoaded', function() {
+            updateDefaultValues();
+            updateQuotasDisplay();
+        });
+    </script>
+</body>
+</html>
